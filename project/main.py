@@ -5,7 +5,7 @@ from langchain.chains import RetrievalQA
 from langchain.indexes import VectorstoreIndexCreator
 from langchain.llms import OpenAI
 
-os.environ["OPENAI_API_KEY"] = os.environ.get("OPENAI_API_KEY", "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")
+os.environ["OPENAI_API_KEY"] = os.environ.get("OPENAI_API_KEY", "")
 
 # Load the document
 loader = CSVLoader('./dataCsv/dataset1.csv')

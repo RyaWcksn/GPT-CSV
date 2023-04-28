@@ -1,20 +1,22 @@
-package errors
+package customerror
 
 import "fmt"
 
 // List of all errors
 const (
 	InternalServer     = "internal error"
-	InvalidRequest     = "Invalid request"
-	UnavailableService = "Unavailable Service"
-	Unauthorized       = "Unauthorized"
+	BadRequest         = "bad request"
+	UnavailableService = "unavailable service"
+	Unauthorized       = "unauthorized"
+	RequestNotFound    = "not found"
 )
 
 const (
 	UnavailableServiceCode = 503
 	InternalServerCode     = 500
-	InvalidRequestCode     = 400
+	BadRequestCode         = 400
 	UnauthorizedCode       = 401
+	ReuestNotFoundCode     = 404
 )
 
 type IError interface {
@@ -23,13 +25,22 @@ type IError interface {
 }
 
 type ErrorForm struct {
-	Code     int    `json:"code"`
-	Message  string `json:"message"`
-	Response string `json:"response"`
+	Code            int                     `json:"code"`
+	Message         string                  `json:"message"`
+	CommonError     string                  `json:"error,omitempty"`
+	ValidationError []ErrorValidatorDetails `json:"errorValidate,omitempty"`
+}
+
+type ErrorValidatorDetails struct {
+	Field   string `json:"field"`
+	Message string `json:"message"`
 }
 
 func (o ErrorForm) Error() string {
-	return fmt.Sprintf("CustomError code = %v desc - %v errors = %v", o.Code, o.Message, o.Response)
+	if o.CommonError == "" && o.ValidationError != nil {
+		return fmt.Sprintf("CustomError code = %v desc - %v errors = %v", o.Code, o.Message, o.ValidationError)
+	}
+	return fmt.Sprintf("CustomError code = %v desc - %v errors = %v", o.Code, o.Message, o.CommonError)
 }
 
 func (o ErrorForm) GetHTTPCode() int {
@@ -44,10 +55,12 @@ func getErrorCode(errMsg string) int {
 		val = InternalServerCode
 	case UnavailableService:
 		val = UnavailableServiceCode
-	case InvalidRequest:
-		val = InvalidRequestCode
+	case BadRequest:
+		val = BadRequestCode
 	case Unauthorized:
 		val = UnauthorizedCode
+	case RequestNotFound:
+		val = ReuestNotFoundCode
 	default:
 		val = InternalServerCode
 	}
@@ -57,8 +70,17 @@ func getErrorCode(errMsg string) int {
 // GetError code and message then return.
 func GetError(errMessage string, errActual error) *ErrorForm {
 	return &ErrorForm{
-		Code:     getErrorCode(errMessage),
-		Message:  errMessage,
-		Response: errActual.Error(),
+		Code:        getErrorCode(errMessage),
+		Message:     errMessage,
+		CommonError: errActual.Error(),
+	}
+}
+
+// GetErrorValidation code and message then return.
+func GetErrorValidation(errMessage string, errs []ErrorValidatorDetails) *ErrorForm {
+	return &ErrorForm{
+		Code:            getErrorCode(errMessage),
+		Message:         errMessage,
+		ValidationError: errs,
 	}
 }

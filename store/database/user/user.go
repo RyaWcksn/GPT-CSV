@@ -1,4 +1,4 @@
-package user
+package storeusersparent
 
 import (
 	"database/sql"
@@ -6,14 +6,14 @@ import (
 	"github.com/RyaWcksn/nann-e/pkgs/logger"
 )
 
-type UserImpl struct {
-	DB  *sql.DB
-	log logger.ILogger
+type UserParentImpl struct {
+	DB *sql.DB
+	l  logger.ILogger
 }
 
-func NewUser(db *sql.DB, log logger.ILogger) *UserImpl {
-	return &UserImpl{
-		DB:  db,
-		log: log,
+func NewUserParentImpl(DB *sql.DB, log logger.ILogger) *UserParentImpl {
+	return &UserParentImpl{
+		DB: DB,
+		l:  log,
 	}
 }

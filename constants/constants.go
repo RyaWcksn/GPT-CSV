@@ -13,3 +13,8 @@ const (
 	HeaderAccept        = "Accept"
 	MIMEApplicationJson = "application/json"
 )
+
+// MySQLError
+const (
+	SQLNoRowsFoundError = "sql: no rows in result set"
+)

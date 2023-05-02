@@ -4,9 +4,12 @@ import (
 	"database/sql"
 	"fmt"
 	handlerusersparent "github.com/RyaWcksn/nann-e/api/v1/handler/authentication"
+	handlerroles "github.com/RyaWcksn/nann-e/api/v1/handler/roles"
 	serviceusersparent "github.com/RyaWcksn/nann-e/api/v1/service/authentication"
+	serviceroles "github.com/RyaWcksn/nann-e/api/v1/service/roles"
 	"github.com/RyaWcksn/nann-e/pkgs/database/mysql"
 	"github.com/RyaWcksn/nann-e/server/middleware"
+	storeroles "github.com/RyaWcksn/nann-e/store/database/roles"
 	storeusersparent "github.com/RyaWcksn/nann-e/store/database/user"
 	"github.com/gofiber/fiber/v2"
 	"os"
@@ -23,6 +26,10 @@ type Server struct {
 	// Users Parent
 	serviceUsersParent serviceusersparent.IService
 	handlerUsersParent handlerusersparent.IHandler
+
+	// Roles
+	serviceRoles serviceroles.IService
+	handlerRoles handlerroles.IHandler
 }
 
 var addr string
@@ -58,12 +65,15 @@ func (s *Server) Register() {
 	}
 
 	usersParentRepo := storeusersparent.NewUserParentImpl(db, s.log)
+	rolesRepo := storeroles.NewRolesImpl(db, s.log)
 
 	// Register service
 	s.serviceUsersParent = serviceusersparent.NewServiceImpl(usersParentRepo, s.cfg, s.log)
+	s.serviceRoles = serviceroles.NewRolesService(rolesRepo, s.log)
 
 	// Register handler
 	s.handlerUsersParent = handlerusersparent.NewUsersParentHandler(s.serviceUsersParent, s.log)
+	s.handlerRoles = handlerroles.NewRoles(s.serviceRoles, s.log)
 }
 
 func New(cfg *config.Config, logger logger.ILogger) *Server {
@@ -85,10 +95,19 @@ func (s Server) Start() {
 		Immutable: true,
 	})
 
+	auth := ViberApp.Group("/api/v1/auth")
+	auth.Use(middleware.ErrorHandler)
+
+	// authentication
+	auth.Post("/user/register", s.handlerUsersParent.RegisterParent)
+	auth.Post("/user/login", s.handlerUsersParent.LoginParent)
+
 	v1 := ViberApp.Group("/api/v1")
+	v1.Use(middleware.Authenticate(s.cfg, s.log))
 	v1.Use(middleware.ErrorHandler)
-	v1.Post("/user/register", s.handlerUsersParent.RegisterParent)
-	v1.Post("/user/login", s.handlerUsersParent.LoginParent)
+
+	// roles
+	v1.Post("/roles", s.handlerRoles.CreateRoles)
 
 	go func() {
 		err := ViberApp.Listen(":9000")

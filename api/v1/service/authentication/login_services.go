@@ -2,6 +2,8 @@ package serviceauthentication
 
 import (
 	"context"
+	"errors"
+	"github.com/RyaWcksn/nann-e/constants"
 	dtoauthentication "github.com/RyaWcksn/nann-e/dtos/authentication"
 	entityauthentication "github.com/RyaWcksn/nann-e/entities/authentication"
 	customerror "github.com/RyaWcksn/nann-e/pkgs/error"
@@ -22,6 +24,10 @@ func (u *AuthenticationService) LoginParent(ctx context.Context, payload *dtoaut
 
 	parentDetail, getOneUsersParentErr := u.usersParentRepo.GetOneUsersParentById(ctx, parentId)
 	if getOneUsersParentErr != nil {
+		if getOneUsersParentErr.Error() == constants.SQLNoRowsFoundError {
+			u.l.Errorf("%s : u.usersParentRepo.GetOneUsersParentById - customer not found", functionName, getOneUsersParentErr)
+			return nil, customerror.GetError(customerror.BadRequest, errors.New("user is not found"))
+		}
 		u.l.Errorf("%s : u.usersParentRepo.GetOneUsersParentById", functionName, getOneUsersParentErr)
 		return nil, getOneUsersParentErr
 	}
@@ -29,7 +35,7 @@ func (u *AuthenticationService) LoginParent(ctx context.Context, payload *dtoaut
 	// check password
 	if err := bcrypt.CompareHashAndPassword([]byte(parentDetail.Password), []byte(payload.Password)); err != nil {
 		u.l.Errorf("[%s : bcrypt.CompareHashAndPassword - password missmatch] : %s", functionName, err)
-		return nil, customerror.GetError(customerror.BadRequest, err)
+		return nil, customerror.GetError(customerror.BadRequest, errors.New("incorrect password"))
 	}
 
 	tokenRequest := &dtoauthentication.TokenRequest{
@@ -37,6 +43,7 @@ func (u *AuthenticationService) LoginParent(ctx context.Context, payload *dtoaut
 		SecretKey: u.cfg.App.SECRET,
 	}
 
+	// generate JWT token
 	token, err := tokens.GenerateJWT(tokenRequest)
 	if err != nil {
 		u.l.Errorf("[%s : tokens.GenerateJWT - error generating JWT token] : %s", functionName, err)

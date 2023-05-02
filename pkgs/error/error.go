@@ -38,9 +38,9 @@ type ErrorValidatorDetails struct {
 
 func (o ErrorForm) Error() string {
 	if o.CommonError == "" && o.ValidationError != nil {
-		return fmt.Sprintf("CustomError code = %v desc - %v errors = %v", o.Code, o.Message, o.ValidationError)
+		return fmt.Sprintf("%s", o.ValidationError)
 	}
-	return fmt.Sprintf("CustomError code = %v desc - %v errors = %v", o.Code, o.Message, o.CommonError)
+	return o.CommonError
 }
 
 func (o ErrorForm) GetHTTPCode() int {

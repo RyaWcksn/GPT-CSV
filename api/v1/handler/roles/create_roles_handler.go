@@ -5,6 +5,7 @@ import (
 	customerror "github.com/RyaWcksn/nann-e/pkgs/error"
 	"github.com/RyaWcksn/nann-e/pkgs/validator"
 	"github.com/gofiber/fiber/v2"
+	"net/http"
 )
 
 func (r *RolesHandler) CreateRoles(c *fiber.Ctx) error {
@@ -27,7 +28,17 @@ func (r *RolesHandler) CreateRoles(c *fiber.Ctx) error {
 		return createRolesErr
 	}
 
-	return c.Status(fiber.StatusOK).JSON(rolesDetail)
+	res := struct {
+		Code    int         `json:"code"`
+		Message string      `json:"message"`
+		Data    interface{} `json:"data"`
+	}{
+		Code:    http.StatusCreated,
+		Message: http.StatusText(http.StatusCreated),
+		Data:    rolesDetail,
+	}
+
+	return c.Status(fiber.StatusOK).JSON(res)
 
 }
 

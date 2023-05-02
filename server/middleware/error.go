@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"errors"
-	"fmt"
 	customerror "github.com/RyaWcksn/nann-e/pkgs/error"
 	"github.com/gofiber/fiber/v2"
 	"strings"
@@ -11,10 +10,8 @@ import (
 // ErrorHandler is a middleware that write any error that occurred to the server
 func ErrorHandler(c *fiber.Ctx) error {
 	err := c.Next()
-	fmt.Println("sampe sini")
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "Method Not Allowed") || strings.HasPrefix(err.Error(), "Cannot") {
-			fmt.Println("Error disini")
 			xerr := customerror.GetError(customerror.RequestNotFound, errors.New("invalid endpoint or using wrong method"))
 			return c.Status(xerr.Code).JSON(xerr)
 		}

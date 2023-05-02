@@ -2,6 +2,7 @@ package storeroles
 
 import (
 	"context"
+	"fmt"
 	dtoroles "github.com/RyaWcksn/nann-e/dtos/roles"
 	customerror "github.com/RyaWcksn/nann-e/pkgs/error"
 )
@@ -14,6 +15,7 @@ func (r *RolesImpl) CreateRoles(ctx context.Context, payload *dtoroles.CreateRol
 		r.l.Errorf("[%s : o.DB.Begin - error begin transaction] : %v", functionName, err)
 		return customerror.GetError(customerror.InternalServer, err)
 	}
+	fmt.Println(payload)
 
 	stmt, err := tx.PrepareContext(ctx, QueryCreateRoles)
 	if err != nil {
@@ -29,6 +31,8 @@ func (r *RolesImpl) CreateRoles(ctx context.Context, payload *dtoroles.CreateRol
 	_, err = stmt.ExecContext(ctx,
 		payload.RoleId,
 		payload.Topic,
+		payload.Rules,
+		payload.Goals,
 		payload.ChildDescription,
 		payload.RoleName,
 		payload.RoleDescription,
@@ -55,4 +59,3 @@ func (r *RolesImpl) CreateRoles(ctx context.Context, payload *dtoroles.CreateRol
 
 	return nil
 }
-

@@ -20,4 +20,8 @@ func NewRoles(rolesService serviceroles.IService, l logger.ILogger) *RolesHandle
 
 type IHandler interface {
 	CreateRoles(c *fiber.Ctx) error
+	GetOneRoleById(c *fiber.Ctx) error
+	GetListRole(c *fiber.Ctx) error
 }
+
+var _ IHandler = (*RolesHandler)(nil)

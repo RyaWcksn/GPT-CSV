@@ -12,6 +12,7 @@ import (
 	storeroles "github.com/RyaWcksn/nann-e/store/database/roles"
 	storeusersparent "github.com/RyaWcksn/nann-e/store/database/user"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"os"
 	"strconv"
 
@@ -95,19 +96,35 @@ func (s Server) Start() {
 		Immutable: true,
 	})
 
+	// API AUTHENTICATION
 	auth := ViberApp.Group("/api/v1/auth")
+	auth.Use(cors.New(cors.Config{
+		AllowHeaders:     "Origin,Content-Type,Accept,Content-Length,Accept-Language,Accept-Encoding,Connection,Access-Control-Allow-Origin",
+		AllowOrigins:     "*",
+		AllowCredentials: true,
+		AllowMethods:     "GET,POST,HEAD,PUT,DELETE,PATCH,OPTIONS",
+	}))
 	auth.Use(middleware.ErrorHandler)
 
 	// authentication
 	auth.Post("/user/register", s.handlerUsersParent.RegisterParent)
 	auth.Post("/user/login", s.handlerUsersParent.LoginParent)
 
+	// BUSINESS API
 	v1 := ViberApp.Group("/api/v1")
+	v1.Use(cors.New(cors.Config{
+		AllowHeaders:     "Origin,Content-Type,Accept,Content-Length,Accept-Language,Accept-Encoding,Connection,Access-Control-Allow-Origin",
+		AllowOrigins:     "*",
+		AllowCredentials: true,
+		AllowMethods:     "GET,POST,HEAD,PUT,DELETE,PATCH,OPTIONS",
+	}))
 	v1.Use(middleware.Authenticate(s.cfg, s.log))
 	v1.Use(middleware.ErrorHandler)
 
 	// roles
 	v1.Post("/roles", s.handlerRoles.CreateRoles)
+	v1.Get("/role/:roleName", s.handlerRoles.GetOneRoleById)
+	v1.Get("/roles", s.handlerRoles.GetListRole)
 
 	go func() {
 		err := ViberApp.Listen(":9000")

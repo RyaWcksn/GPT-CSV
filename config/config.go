@@ -18,15 +18,15 @@ type Config struct {
 		SECRET   string `mapstructure:"secret"`
 	} `mapstructure:"app"`
 	Server struct {
-		HTTPAddress string `mapstructure:"httpaddress"`
+		HTTPAddress string `mapstructure:"http_address"`
 	} `mapstructure:"server"`
 	Database struct {
 		Host        string `mapstructure:"host"`
 		Username    string `mapstructure:"username"`
 		Password    string `mapstructure:"password"`
 		Database    string `mapstructure:"database"`
-		MaxIdleConn int    `mapstructure:"maxiddle"`
-		MaxOpenConn int    `mapstructure:"maxopen"`
+		MaxIdleConn int    `mapstructure:"max_idle"`
+		MaxOpenConn int    `mapstructure:"max_open"`
 	} `mapstructure:"database"`
 }
 

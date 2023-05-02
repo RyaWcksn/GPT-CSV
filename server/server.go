@@ -3,31 +3,40 @@ package server
 import (
 	"database/sql"
 	"fmt"
-	"net/http"
+	handlerusersparent "github.com/RyaWcksn/nann-e/api/v1/handler/authentication"
+	handlerroles "github.com/RyaWcksn/nann-e/api/v1/handler/roles"
+	serviceusersparent "github.com/RyaWcksn/nann-e/api/v1/service/authentication"
+	serviceroles "github.com/RyaWcksn/nann-e/api/v1/service/roles"
+	"github.com/RyaWcksn/nann-e/pkgs/database/mysql"
+	"github.com/RyaWcksn/nann-e/server/middleware"
+	storeroles "github.com/RyaWcksn/nann-e/store/database/roles"
+	storeusersparent "github.com/RyaWcksn/nann-e/store/database/user"
+	"github.com/gofiber/fiber/v2"
 	"os"
 	"strconv"
 
-	"github.com/RyaWcksn/nann-e/api/v1/handler"
-	"github.com/RyaWcksn/nann-e/api/v1/service"
 	"github.com/RyaWcksn/nann-e/config"
-	"github.com/RyaWcksn/nann-e/pkgs/database"
 	"github.com/RyaWcksn/nann-e/pkgs/logger"
-	"github.com/RyaWcksn/nann-e/store/database/prompt"
-	"github.com/RyaWcksn/nann-e/store/database/user"
-	"github.com/RyaWcksn/nann-e/store/gpt"
 )
 
 type Server struct {
-	cfg     *config.Config
-	log     logger.ILogger
-	service service.IService
-	handler handler.IHandler
+	cfg *config.Config
+	log logger.ILogger
+
+	// Users Parent
+	serviceUsersParent serviceusersparent.IService
+	handlerUsersParent handlerusersparent.IHandler
+
+	// Roles
+	serviceRoles serviceroles.IService
+	handlerRoles handlerroles.IHandler
 }
 
 var addr string
 var SVR *Server
 var db *sql.DB
 var signalChan chan (os.Signal) = make(chan os.Signal, 1)
+var ViberApp *fiber.App
 
 func (s *Server) initServer() {
 	addr = ":9000"
@@ -42,11 +51,10 @@ func (s *Server) initServer() {
 }
 
 func (s *Server) Register() {
-
 	s.initServer()
 
 	// MYSQL
-	dbConn := database.NewDatabaseConnection(*s.cfg, s.log)
+	dbConn := mysql.NewDatabaseConnection(*s.cfg, s.log)
 	if dbConn == nil {
 		s.log.Fatal("Expecting DB connection but received nil")
 	}
@@ -56,18 +64,19 @@ func (s *Server) Register() {
 		s.log.Fatal("Expecting DB connection but received nil")
 	}
 
-	user := user.NewUser(db, s.log)
-	prompt := prompt.NewPrompt(db, s.log)
-	openAi := gpt.NewGpt("")
+	usersParentRepo := storeusersparent.NewUserParentImpl(db, s.log)
+	rolesRepo := storeroles.NewRolesImpl(db, s.log)
 
 	// Register service
-	s.service = service.NewService(user, prompt, openAi, s.log)
+	s.serviceUsersParent = serviceusersparent.NewServiceImpl(usersParentRepo, s.cfg, s.log)
+	s.serviceRoles = serviceroles.NewRolesService(rolesRepo, s.log)
 
 	// Register handler
-	s.handler = handler.NewHandler(s.service, s.log)
+	s.handlerUsersParent = handlerusersparent.NewUsersParentHandler(s.serviceUsersParent, s.log)
+	s.handlerRoles = handlerroles.NewRoles(s.serviceRoles, s.log)
 }
 
-func NewService(cfg *config.Config, logger logger.ILogger) *Server {
+func New(cfg *config.Config, logger logger.ILogger) *Server {
 	if SVR != nil {
 		return SVR
 	}
@@ -82,9 +91,26 @@ func NewService(cfg *config.Config, logger logger.ILogger) *Server {
 }
 
 func (s Server) Start() {
+	ViberApp = fiber.New(fiber.Config{
+		Immutable: true,
+	})
+
+	auth := ViberApp.Group("/api/v1/auth")
+	auth.Use(middleware.ErrorHandler)
+
+	// authentication
+	auth.Post("/user/register", s.handlerUsersParent.RegisterParent)
+	auth.Post("/user/login", s.handlerUsersParent.LoginParent)
+
+	v1 := ViberApp.Group("/api/v1")
+	v1.Use(middleware.Authenticate(s.cfg, s.log))
+	v1.Use(middleware.ErrorHandler)
+
+	// roles
+	v1.Post("/roles", s.handlerRoles.CreateRoles)
 
 	go func() {
-		err := http.ListenAndServe(addr, nil)
+		err := ViberApp.Listen(":9000")
 		if err != nil {
 			s.log.Fatalf("error listening to address %v, err=%v", addr, err)
 		}

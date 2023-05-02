@@ -1,7 +1,8 @@
-package database
+package mysql
 
 import (
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/RyaWcksn/nann-e/config"
@@ -25,6 +26,7 @@ func (db *Connection) DBConnect() *sql.DB {
 	dbConn, errConn := sql.Open(
 		"mysql", db.MYSQL.Database.Username+":"+db.MYSQL.Database.Password+"@tcp("+db.MYSQL.Database.Host+")/"+db.MYSQL.Database.Database,
 	)
+	fmt.Println(db.MYSQL.Database.Username + ":" + db.MYSQL.Database.Password + "@tcp(" + db.MYSQL.Database.Host + ")/" + db.MYSQL.Database.Database)
 	if errConn != nil {
 		db.L.Errorf("[ERR] Error while connecting... := %v", errConn)
 		return nil

@@ -139,6 +139,9 @@ func (s Server) Start() {
 
 	// Child
 	v1.Post("/child", s.handlerChild.CreateUserChild)
+	v1.Get("/child/:childName", s.handlerChild.GetOneUserChild)
+	v1.Get("/children", s.handlerChild.GetListUserChild)
+	v1.Patch("/child/:childName", s.handlerChild.UpdateSingleUserChild)
 
 	go func() {
 		err := ViberApp.Listen(":9000")

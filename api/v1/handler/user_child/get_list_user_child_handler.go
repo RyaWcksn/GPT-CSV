@@ -1,30 +1,30 @@
-package handlerroles
+package handlerchild
 
 import (
-	dtoroles "github.com/RyaWcksn/nann-e/dtos/roles"
+	dtochild "github.com/RyaWcksn/nann-e/dtos/user_child"
 	"github.com/RyaWcksn/nann-e/pkgs/validator"
 	"github.com/gofiber/fiber/v2"
 	"net/http"
 	"strconv"
 )
 
-func (r *RolesHandler) GetListRole(c *fiber.Ctx) error {
-	functionName := "RolesHandler.GetListRole"
+func (ch *ChildHandler) GetListUserChild(c *fiber.Ctx) error {
+	functionName := "ChildHandler.GetListUserChild"
 	ctx := c.Context()
 
 	pageNumber := c.Query("page")
 	limit := c.Query("limit")
 
-	payload := new(dtoroles.GetListRoleRequest)
+	payload := new(dtochild.GetListUserChildRequest)
 	payload.PageNumber, _ = strconv.Atoi(pageNumber)
 	payload.Limit, _ = strconv.Atoi(limit)
 
 	if err := validator.Validate(payload); err != nil {
-		r.l.Errorf("[%s : validator.Validate] : %s", functionName, err)
+		ch.l.Errorf("[%s : validator.Validate] : %s", functionName, err)
 		return err
 	}
 
-	roleDetail, getListErr := r.rolesService.GetListRole(ctx, payload)
+	childDetail, getListErr := ch.childService.GetListUserChild(ctx, payload)
 	if getListErr != nil {
 		return getListErr
 	}
@@ -36,8 +36,9 @@ func (r *RolesHandler) GetListRole(c *fiber.Ctx) error {
 	}{
 		Code:    http.StatusOK,
 		Message: http.StatusText(http.StatusOK),
-		Data:    roleDetail,
+		Data:    childDetail,
 	}
 
 	return c.Status(fiber.StatusOK).JSON(res)
 }
+

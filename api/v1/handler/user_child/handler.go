@@ -20,4 +20,7 @@ func NewChildHandler(childService servicechild.IService, l logger.ILogger) *Chil
 
 type IHandler interface {
 	CreateUserChild(c *fiber.Ctx) error
+	GetOneUserChild(c *fiber.Ctx) error
+	GetListUserChild(c *fiber.Ctx) error
+	UpdateSingleUserChild(c *fiber.Ctx) error
 }

@@ -22,6 +22,9 @@ func NewChildService(childRepo repochild.IRepository, l logger.ILogger) *ChildSe
 
 type IService interface {
 	CreateUserChild(ctx context.Context, payload *dtochild.CreateUserChildRequest) (*entitychild.UserChildDetail, error)
+	GetOneUserChild(ctx context.Context, payload *dtochild.GetOneUserChildRequest) (*entitychild.UserChildDetail, error)
+	GetListUserChild(ctx context.Context, payload *dtochild.GetListUserChildRequest) ([]entitychild.UserChildDetail, error)
+	UpdateSingleUserChild(ctx context.Context, payload *dtochild.UpdateSingleUserChildRequest) (*entitychild.UserChildDetail, error)
 }
 
 var _ IService = (*ChildService)(nil)

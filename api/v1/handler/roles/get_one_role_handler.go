@@ -4,6 +4,7 @@ import (
 	dtoroles "github.com/RyaWcksn/nann-e/dtos/roles"
 	"github.com/gofiber/fiber/v2"
 	"net/http"
+	"strings"
 )
 
 func (r *RolesHandler) GetOneRoleById(c *fiber.Ctx) error {
@@ -11,7 +12,9 @@ func (r *RolesHandler) GetOneRoleById(c *fiber.Ctx) error {
 
 	payload := new(dtoroles.GetOneRoleRequest)
 	roleName := c.Params("roleName")
-	payload.RoleName = roleName
+	roleNameClean := strings.ReplaceAll(roleName, "%20", " ")
+
+	payload.RoleName = roleNameClean
 
 	roleDetail, getRoleErr := r.rolesService.GetOneRole(ctx, payload)
 	if getRoleErr != nil {

@@ -1,6 +1,7 @@
 package handlerroles
 
 import (
+	dtoroles "github.com/RyaWcksn/nann-e/dtos/roles"
 	"github.com/gofiber/fiber/v2"
 	"net/http"
 )
@@ -8,9 +9,11 @@ import (
 func (r *RolesHandler) GetOneRoleById(c *fiber.Ctx) error {
 	ctx := c.Context()
 
+	payload := new(dtoroles.GetOneRoleRequest)
 	roleName := c.Params("roleName")
+	payload.RoleName = roleName
 
-	roleDetail, getRoleErr := r.rolesService.GetOneRoleById(ctx, roleName)
+	roleDetail, getRoleErr := r.rolesService.GetOneRole(ctx, payload)
 	if getRoleErr != nil {
 		return getRoleErr
 	}

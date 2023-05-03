@@ -10,8 +10,9 @@ func (r *RolesImpl) GetListRole(ctx context.Context, offset, limit int) ([]entit
 	functionName := "RolesImpl.GetListRole"
 
 	roles := make([]entityroles.RoleDetails, 0)
+	parentId := ctx.Value("ctxParentId").(string)
 
-	rows, err := r.DB.QueryContext(ctx, QueryGetListRole, offset, limit)
+	rows, err := r.DB.QueryContext(ctx, QueryGetListRole, parentId, offset, limit)
 	if err != nil {
 		r.l.Errorf("[%s : r.DB.QueryContext] : %s", functionName, err)
 		return nil, nil
@@ -20,11 +21,11 @@ func (r *RolesImpl) GetListRole(ctx context.Context, offset, limit int) ([]entit
 	for rows.Next() {
 		var role entityroles.RoleDetails
 		if err = rows.Scan(
+			&role.RoleName,
 			&role.Topic,
 			&role.Rules,
 			&role.Goals,
 			&role.ChildDescription,
-			&role.RoleName,
 			&role.RoleDescription,
 		); err != nil {
 			r.l.Errorf("[%s : rows.Scan] : %s", functionName, err)
@@ -35,4 +36,3 @@ func (r *RolesImpl) GetListRole(ctx context.Context, offset, limit int) ([]entit
 
 	return roles, nil
 }
-

@@ -5,12 +5,15 @@ import (
 	"fmt"
 	handlerusersparent "github.com/RyaWcksn/nann-e/api/v1/handler/authentication"
 	handlerroles "github.com/RyaWcksn/nann-e/api/v1/handler/roles"
+	handlerchild "github.com/RyaWcksn/nann-e/api/v1/handler/user_child"
 	serviceusersparent "github.com/RyaWcksn/nann-e/api/v1/service/authentication"
 	serviceroles "github.com/RyaWcksn/nann-e/api/v1/service/roles"
+	servicechild "github.com/RyaWcksn/nann-e/api/v1/service/user_child"
 	"github.com/RyaWcksn/nann-e/pkgs/database/mysql"
 	"github.com/RyaWcksn/nann-e/server/middleware"
 	storeroles "github.com/RyaWcksn/nann-e/store/database/roles"
 	storeusersparent "github.com/RyaWcksn/nann-e/store/database/user"
+	storechild "github.com/RyaWcksn/nann-e/store/database/user_child"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"os"
@@ -31,6 +34,10 @@ type Server struct {
 	// Roles
 	serviceRoles serviceroles.IService
 	handlerRoles handlerroles.IHandler
+
+	// Child
+	serviceChild servicechild.IService
+	handlerChild handlerchild.IHandler
 }
 
 var addr string
@@ -67,14 +74,17 @@ func (s *Server) Register() {
 
 	usersParentRepo := storeusersparent.NewUserParentImpl(db, s.log)
 	rolesRepo := storeroles.NewRolesImpl(db, s.log)
+	childRepo := storechild.NewChildImpl(db, s.log)
 
 	// Register service
 	s.serviceUsersParent = serviceusersparent.NewServiceImpl(usersParentRepo, s.cfg, s.log)
 	s.serviceRoles = serviceroles.NewRolesService(rolesRepo, s.log)
+	s.serviceChild = servicechild.NewChildService(childRepo, s.log)
 
 	// Register handler
 	s.handlerUsersParent = handlerusersparent.NewUsersParentHandler(s.serviceUsersParent, s.log)
 	s.handlerRoles = handlerroles.NewRoles(s.serviceRoles, s.log)
+	s.handlerChild = handlerchild.NewChildHandler(s.serviceChild, s.log)
 }
 
 func New(cfg *config.Config, logger logger.ILogger) *Server {
@@ -125,6 +135,10 @@ func (s Server) Start() {
 	v1.Post("/roles", s.handlerRoles.CreateRoles)
 	v1.Get("/role/:roleName", s.handlerRoles.GetOneRoleById)
 	v1.Get("/roles", s.handlerRoles.GetListRole)
+	v1.Patch("/role/:roleName", s.handlerRoles.UpdateSingleRole)
+
+	// Child
+	v1.Post("/child", s.handlerChild.CreateUserChild)
 
 	go func() {
 		err := ViberApp.Listen(":9000")

@@ -22,6 +22,7 @@ type IHandler interface {
 	CreateRoles(c *fiber.Ctx) error
 	GetOneRoleById(c *fiber.Ctx) error
 	GetListRole(c *fiber.Ctx) error
+	UpdateSingleRole(c *fiber.Ctx) error
 }
 
 var _ IHandler = (*RolesHandler)(nil)

@@ -8,24 +8,27 @@ import (
 	"net/http"
 )
 
-func (r *RolesHandler) CreateRoles(c *fiber.Ctx) error {
-	functionName := "RolesHandler.CreateRoles"
+func (r *RolesHandler) UpdateSingleRole(c *fiber.Ctx) error {
+	functionName := "RolesHandler.UpdateSingleRole"
 	ctx := c.Context()
 
-	payload := &dtoroles.CreateRoleRequest{}
+	roleName := c.Params("roleName")
+
+	payload := &dtoroles.UpdateSingleRoleRequest{}
 	if err := c.BodyParser(payload); err != nil {
 		r.l.Errorf("[%s - c.BodyParser] : %s", functionName, err)
 		return customerror.GetError(customerror.InternalServer, err)
 	}
+	payload.RoleName = roleName
 
 	if err := validator.Validate(payload); err != nil {
 		r.l.Errorf("[%s : validator.Validate] : %s", functionName, err)
 		return err
 	}
 
-	rolesDetail, createRolesErr := r.rolesService.CreateRoles(ctx, payload)
-	if createRolesErr != nil {
-		return createRolesErr
+	roleDetail, updateRoleErr := r.rolesService.UpdateSingleRoleById(ctx, payload)
+	if updateRoleErr != nil {
+		return updateRoleErr
 	}
 
 	res := struct {
@@ -33,11 +36,11 @@ func (r *RolesHandler) CreateRoles(c *fiber.Ctx) error {
 		Message string      `json:"message"`
 		Data    interface{} `json:"data"`
 	}{
-		Code:    http.StatusCreated,
-		Message: http.StatusText(http.StatusCreated),
-		Data:    rolesDetail,
+		Code:    http.StatusOK,
+		Message: http.StatusText(http.StatusOK),
+		Data:    roleDetail,
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(res)
-
+	return c.Status(fiber.StatusOK).JSON(res)
 }
+

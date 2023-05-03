@@ -22,8 +22,9 @@ func NewRolesService(rolesRepo reporoles.IRepository, l logger.ILogger) *RolesSe
 
 type IService interface {
 	CreateRoles(ctx context.Context, payload *dtoroles.CreateRoleRequest) (*entityroles.RoleDetails, error)
-	GetOneRoleById(ctx context.Context, roleName string) (*entityroles.RoleDetails, error)
+	GetOneRole(ctx context.Context, payload *dtoroles.GetOneRoleRequest) (*entityroles.RoleDetails, error)
 	GetListRole(ctx context.Context, payload *dtoroles.GetListRoleRequest) ([]entityroles.RoleDetails, error)
+	UpdateSingleRoleById(ctx context.Context, payload *dtoroles.UpdateSingleRoleRequest) (*entityroles.RoleDetails, error)
 }
 
 var _ IService = (*RolesService)(nil)

@@ -1,31 +1,31 @@
-package handlerroles
+package handlerchild
 
 import (
-	dtoroles "github.com/RyaWcksn/nann-e/dtos/roles"
+	dtochild "github.com/RyaWcksn/nann-e/dtos/user_child"
 	customerror "github.com/RyaWcksn/nann-e/pkgs/error"
 	"github.com/RyaWcksn/nann-e/pkgs/validator"
 	"github.com/gofiber/fiber/v2"
 	"net/http"
 )
 
-func (r *RolesHandler) CreateRoles(c *fiber.Ctx) error {
+func (ch *ChildHandler) CreateUserChild(c *fiber.Ctx) error {
 	functionName := "RolesHandler.CreateRoles"
 	ctx := c.Context()
 
-	payload := &dtoroles.CreateRoleRequest{}
+	payload := &dtochild.CreateUserChildRequest{}
 	if err := c.BodyParser(payload); err != nil {
-		r.l.Errorf("[%s - c.BodyParser] : %s", functionName, err)
+		ch.l.Errorf("[%s - c.BodyParser] : %s", functionName, err)
 		return customerror.GetError(customerror.InternalServer, err)
 	}
 
 	if err := validator.Validate(payload); err != nil {
-		r.l.Errorf("[%s : validator.Validate] : %s", functionName, err)
+		ch.l.Errorf("[%s : validator.Validate] : %s", functionName, err)
 		return err
 	}
 
-	rolesDetail, createRolesErr := r.rolesService.CreateRoles(ctx, payload)
-	if createRolesErr != nil {
-		return createRolesErr
+	childDetail, createUserChildErr := ch.childService.CreateUserChild(ctx, payload)
+	if createUserChildErr != nil {
+		return createUserChildErr
 	}
 
 	res := struct {
@@ -35,9 +35,8 @@ func (r *RolesHandler) CreateRoles(c *fiber.Ctx) error {
 	}{
 		Code:    http.StatusCreated,
 		Message: http.StatusText(http.StatusCreated),
-		Data:    rolesDetail,
+		Data:    childDetail,
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(res)
-
 }

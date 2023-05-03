@@ -6,8 +6,8 @@ import (
 	customerror "github.com/RyaWcksn/nann-e/pkgs/error"
 )
 
-func (r *RolesImpl) CreateRoles(ctx context.Context, payload *dtoroles.CreateRoleRequest) error {
-	functionName := "RolesImpl.CreateRoles"
+func (r *RolesImpl) UpdateSingleRoleById(ctx context.Context, payload *dtoroles.UpdateSingleRoleRequest) error {
+	functionName := "RolesImpl.UpdateSingleRoleById"
 
 	tx, err := r.DB.Begin()
 	if err != nil {
@@ -15,43 +15,30 @@ func (r *RolesImpl) CreateRoles(ctx context.Context, payload *dtoroles.CreateRol
 		return customerror.GetError(customerror.InternalServer, err)
 	}
 
-	stmt, err := tx.PrepareContext(ctx, QueryCreateRoles)
-	if err != nil {
-		if rollbackErr := tx.Rollback(); rollbackErr != nil {
-			r.l.Errorf("update failed: %v, unable to back: %v", err, rollbackErr)
-			return customerror.GetError(customerror.InternalServer, rollbackErr)
-		}
-		r.l.Errorf("[%s - tx.PrepareContext()] : %s", functionName, err)
-		return customerror.GetError(customerror.InternalServer, err)
-	}
-	defer stmt.Close()
-
-	_, err = stmt.ExecContext(ctx,
-		payload.ParentId,
+	_, err = tx.ExecContext(ctx, QueryUpdateSingleRoleById,
 		payload.Topic,
 		payload.Rules,
 		payload.Goals,
 		payload.ChildDescription,
-		payload.RoleName,
 		payload.RoleDescription,
+		payload.ParentId,
+		payload.RoleName,
 	)
-
 	if err != nil {
+		r.l.Debugf("[%s : tx.ExecContext] : %s", functionName, err)
 		if rollbackErr := tx.Rollback(); rollbackErr != nil {
-			r.l.Errorf("update failed: %v, unable to back: %v", err, rollbackErr)
+			r.l.Errorf("[%s : tx.Rollback] : %s", functionName, rollbackErr)
 			return customerror.GetError(customerror.InternalServer, rollbackErr)
 		}
-
-		r.l.Errorf("[%s - stmt.ExecContext]: %s", functionName, err)
 		return customerror.GetError(customerror.InternalServer, err)
 	}
 
 	if commitErr := tx.Commit(); commitErr != nil {
+		r.l.Errorf("[%s : tx.Commit] : %s", functionName, commitErr)
 		if rollbackErr := tx.Rollback(); rollbackErr != nil {
-			r.l.Errorf("update failed: %v, unable to back: %v", err, rollbackErr)
+			r.l.Errorf("[%s : tx.Rollback] : %s", functionName, rollbackErr)
 			return customerror.GetError(customerror.InternalServer, rollbackErr)
 		}
-		r.l.Errorf("update failed: %v, unable to commit: %v", err, commitErr)
 		return customerror.GetError(customerror.InternalServer, commitErr)
 	}
 

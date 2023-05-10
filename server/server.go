@@ -4,13 +4,16 @@ import (
 	"database/sql"
 	"fmt"
 	handlerusersparent "github.com/RyaWcksn/nann-e/api/v1/handler/authentication"
+	handlerchat "github.com/RyaWcksn/nann-e/api/v1/handler/chat"
 	handlerroles "github.com/RyaWcksn/nann-e/api/v1/handler/roles"
 	handlerchild "github.com/RyaWcksn/nann-e/api/v1/handler/user_child"
 	serviceusersparent "github.com/RyaWcksn/nann-e/api/v1/service/authentication"
+	servicechat "github.com/RyaWcksn/nann-e/api/v1/service/chat"
 	serviceroles "github.com/RyaWcksn/nann-e/api/v1/service/roles"
 	servicechild "github.com/RyaWcksn/nann-e/api/v1/service/user_child"
 	"github.com/RyaWcksn/nann-e/pkgs/database/mysql"
 	"github.com/RyaWcksn/nann-e/server/middleware"
+	storechat "github.com/RyaWcksn/nann-e/store/database/chat"
 	storeroles "github.com/RyaWcksn/nann-e/store/database/roles"
 	storeusersparent "github.com/RyaWcksn/nann-e/store/database/user"
 	storechild "github.com/RyaWcksn/nann-e/store/database/user_child"
@@ -38,6 +41,10 @@ type Server struct {
 	// Child
 	serviceChild servicechild.IService
 	handlerChild handlerchild.IHandler
+
+	// Chat
+	serviceChat servicechat.IService
+	handlerChat handlerchat.IHandler
 }
 
 var addr string
@@ -75,16 +82,19 @@ func (s *Server) Register() {
 	usersParentRepo := storeusersparent.NewUserParentImpl(db, s.log)
 	rolesRepo := storeroles.NewRolesImpl(db, s.log)
 	childRepo := storechild.NewChildImpl(db, s.log)
+	chatRepo := storechat.NewChatImpl(db, s.log)
 
 	// Register service
 	s.serviceUsersParent = serviceusersparent.NewServiceImpl(usersParentRepo, s.cfg, s.log)
 	s.serviceRoles = serviceroles.NewRolesService(rolesRepo, s.log)
 	s.serviceChild = servicechild.NewChildService(childRepo, s.log)
+	s.serviceChat = servicechat.NewChatService(chatRepo, childRepo, rolesRepo, s.log)
 
 	// Register handler
 	s.handlerUsersParent = handlerusersparent.NewUsersParentHandler(s.serviceUsersParent, s.log)
 	s.handlerRoles = handlerroles.NewRoles(s.serviceRoles, s.log)
 	s.handlerChild = handlerchild.NewChildHandler(s.serviceChild, s.log)
+	s.handlerChat = handlerchat.NewChatHandler(s.serviceChat, s.log)
 }
 
 func New(cfg *config.Config, logger logger.ILogger) *Server {
@@ -123,7 +133,7 @@ func (s Server) Start() {
 	// BUSINESS API
 	v1 := ViberApp.Group("/api/v1")
 	v1.Use(cors.New(cors.Config{
-		AllowHeaders:     "Origin,Content-Type,Accept,Content-Length,Accept-Language,Accept-Encoding,Connection,Access-Control-Allow-Origin",
+		AllowHeaders:     "*",
 		AllowOrigins:     "*",
 		AllowCredentials: true,
 		AllowMethods:     "GET,POST,HEAD,PUT,DELETE,PATCH,OPTIONS",
@@ -142,6 +152,9 @@ func (s Server) Start() {
 	v1.Get("/child/:childName", s.handlerChild.GetOneUserChild)
 	v1.Get("/children", s.handlerChild.GetListUserChild)
 	v1.Patch("/child/:childName", s.handlerChild.UpdateSingleUserChild)
+
+	// Chat
+	v1.Post("/chat", s.handlerChat.CreateNewChat)
 
 	go func() {
 		err := ViberApp.Listen(":9000")

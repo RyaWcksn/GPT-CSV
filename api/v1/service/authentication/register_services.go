@@ -2,12 +2,13 @@ package serviceauthentication
 
 import (
 	"context"
+	"errors"
 	dtoauthentication "github.com/RyaWcksn/nann-e/dtos/authentication"
 	entityauthentication "github.com/RyaWcksn/nann-e/entities/authentication"
-	"github.com/RyaWcksn/nann-e/pkgs/utils"
-
 	customerror "github.com/RyaWcksn/nann-e/pkgs/error"
+	"github.com/RyaWcksn/nann-e/pkgs/utils"
 	"golang.org/x/crypto/bcrypt"
+	"strings"
 )
 
 func (u *AuthenticationService) RegisterParent(ctx context.Context, payload *dtoauthentication.RegisterRequest) (*entityauthentication.RegisterDetails, error) {
@@ -35,6 +36,9 @@ func (u *AuthenticationService) RegisterParent(ctx context.Context, payload *dto
 	// call repo func
 	err := u.usersParentRepo.CreateUsersParent(ctx, payload)
 	if err != nil {
+		if strings.Contains(err.Error(), "Duplicate entry") {
+			return nil, customerror.GetError(customerror.BadRequest, errors.New("user already exist"))
+		}
 		u.l.Errorf("[%s : u.usersParentRepo.CreateUsersParent] : %s", functionName, err)
 		return nil, err
 	}
